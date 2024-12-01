@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Vectors with Pts.js</title>
+  <script src="https://unpkg.com/pts/dist/pts.js"></script> <!-- Include Pts.js -->
+  <style>
+    body {
+      display: flex;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      position: relative;
+      font-family: Arial, sans-serif;
+    }
+    #pt {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      height: 90vh;
+    }
+    #arguments {
+      position: absolute;
+      top: 1em;
+      left: 1em;
+      z-index: 2;
+      width: 20em;
+      clear: none;
+      text-align: left;
+      font-size: 200%;
+    }
+    input {
+      margin: 0.2em;
+      font-size: 100%;
+    }
+    button {
+      font-size: 100%;
+      margin-left: 1em;
+    }
+  </style>
+</head>
+<body>
+  <!-- Canvas container -->
+  <div id="arguments">
+      <p>Ange termerna. Summan måste vara mellan 20 och -20:</p>
+      <form>
+          <input type="text" id="A" name="A" /><br/>
+          <input type="text" id="B" name="B" /><br/>
+          <button type="submit" onclick="advStart(event)">Starta</button>
+      </form>
+  </div>
+  <canvas id="pt"></canvas>
+
+  <script>
+    let resetAdv = false;
+    let stage = "wait for input";
+    const advStep = 50;
+
+    function checkSanity() {
+        try {
+            op1 = parseInt(document.getElementById("A").value);
+            op2 = parseInt(document.getElementById("B").value);
+            return Math.abs(op1 + op2) <= 20;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function advStart(event) {
+        event.preventDefault();
+        if (!checkSanity()) {
+            alert("Summan måste vara mellan -20 och 20");
+            document.getElementById("A").value = 2;
+            document.getElementById("B").value = 2;
+        }
+        resetAdv = true;
+        stage = "prepare";
+    }
+
+    function drawAxis(form, space, Pt, Line, center) {
+          // Draw X and Y axes
+          form.strokeOnly('gray', 1).line([new Pt(0, space.center.y), new Pt(space.width, space.center.y)]);
+          // form.line([new Pt(center.x, center.y - advStep), new Pt(center.x, center.y + advStep)]);
+          form.strokeOnly('gray', 1).line([new Pt(space.center.x, 0), new Pt(space.center.x, space.height)]);
+
+          form.fillOnly("red").text(new Pt(center.x + 10, center.y + 20), 0);
+          // Draw units
+          for (let i = 0; i < 10; i++) {
+              form.strokeOnly('gray', 1).line([new Pt(center.x + i * advStep, center.y - 10), new Pt(center.x + i * advStep, center.y + 10)]);
+              form.strokeOnly('gray', 1).line([new Pt(center.x - i * advStep, center.y - 10), new Pt(center.x - i * advStep, center.y + 10)])
+              if ( i != 0 ) {
+                  form.fillOnly("red").text(new Pt(center.x + i * advStep, center.y - 20), i);
+                  form.fillOnly("red").text(new Pt(center.x - i * advStep, center.y + 20), -i);
+              }
+              form.strokeOnly('gray', 1).line([new Pt(center.x + 10, center.y + i * advStep), new Pt(center.x - 10, center.y + i * advStep)])
+              form.strokeOnly('gray', 1).line([new Pt(center.x + 10, center.y - i * advStep), new Pt(center.x - 10, center.y - i * advStep)])
+          }
+    }
+
+    function drawTooltip(form, Pt, Line, center) {
+        let points = [
+            new Pt(center.x + advStep * 8, center.y - advStep * 4),
+            new Pt(center.x + advStep * 3, 200)
+        ];
+        let line = form.strokeOnly('gray', 1).line(points);
+        let marker = Line.marker(points, new Pt(10, 10), "arrow", true);
+        form.stroke('gray', 1).fill('gray').polygon(marker);
+        form.fillOnly('gray').font(40).text([points[0].x, points[0].y + 20],
+            "Bygg en kedja av pilar,"
+        );
+        form.fillOnly('gray').font(40).text([points[0].x, points[0].y + 80],
+            "starta från noll"
+        );
+    }
+
+    function getWaypoint(vectors, wayPoint) {
+        for (let i = 0; i < vectors.length; i++) {
+            if (vectors[i].points[0].$subtract(wayPoint).magnitudeSq() < 1000) {
+                return vectors[i];
+            }
+        }
+        return null;
+    }
+
+    function validateAdv(vectors, form, Pt, center) {
+        let pointer = null;
+        let wayPoint = new Pt(center);
+        let sum = 0;
+        let args = [];
+        let chain = [];
+        if (vectors.length < 1) {
+            return
+        }
+        for (let i = 0; i < vectors.length; i++) {
+            pointer = getWaypoint(vectors, wayPoint);
+            if (pointer == null) {
+                return
+            }
+            wayPoint = pointer.points[1];
+            args.push(pointer.value);
+            chain.push(pointer);
+        }
+        // draw circles
+        form.strokeOnly('gray', 1).circle([center, new Pt(20, 20)]);
+        form.fillOnly('gray').font(10).text([center.x, center.y + advStep], sum);
+
+        for (let i = 0; i < chain.length; i++) {
+            form.strokeOnly('gray', 1).circle([chain[i].points[1], new Pt(20, 20)]);
+            sum += chain[i].value;
+            form.fillOnly(chain[i].color).font(20 + i * 10).text([chain[i].points[1].x, chain[i].points[1].y + advStep], sum);
+        }
+        form.fillOnly("black").font(60).text([advStep * 2, center.y + advStep * 5], "Σ(" + args.join(",") + ") = " + sum);
+    }
+
+    function newVector(form, Pt, Line, color, a, b, value) {
+        let vector = {
+            offset: new Pt(b.x, b.y),
+            value: value,
+            points:
+                [
+                    new Pt(a.x, a.y),
+                    new Pt(a.x, a.y)
+                ],
+            color: color,
+            form: form,
+            draw: function() {
+                this.points[1].x = this.points[0].x + this.offset.x
+                this.points[1].y = this.points[0].y + this.offset.y
+                let line = this.form.strokeOnly(this.color, 3).line(
+                    [
+                        this.points[0],
+                        this.points[1]
+                    ]
+                );
+                let marker = Line.marker(this.points, new Pt(10, 10), "arrow", true);
+                this.form.stroke(this.color, 3).fill(this.color).polygon(marker);
+                form.stroke(this.color, 3).fill(this.color).circle([this.points[0], new Pt(5, 5)]);
+            },
+            to: function(p) {
+                this.points[0].to(p);
+                this.draw();
+            },
+        }
+        return vector;
+    }
+
+    (function() {
+      // Import Pts into the namespace
+      const { CanvasSpace, Pt, Line, Group, Const } = window.Pts;
+
+      // Create a space and form
+      const space = new CanvasSpace("#pt").setup({ bgcolor: "#ffffff", resize: true, retina: true });
+      const canvas = document.getElementById("pt");
+      const form = space.getForm();
+      let timestamp = Date.now();
+      let vectors = [];
+      let drag = null;
+
+      space.add({
+        // Draw function
+        animate: (time, ftime) => {
+          form.strokeOnly("lightgray", 2);
+
+          // Define unit vectors with default positions
+          let center = new Pt(space.width / 2, space.height / 2);
+
+          drawAxis(form, space, Pt, Line, center);
+
+          if (resetAdv) {
+              resetAdv = false;
+              const op1 = parseInt(document.getElementById("A").value);
+              const op2 = parseInt(document.getElementById("B").value);
+              vectors = [
+                  newVector(
+                      form, Pt, Line, "blue",
+                      new Pt(center.x + advStep * 2, 100),
+                      new Pt(op1 * advStep, 0),
+                      op1
+                  ),
+                  newVector(
+                      form, Pt, Line, "red",
+                      new Pt(center.x + advStep * 2, 150),
+                      new Pt(op2 * advStep, 0),
+                      op2
+                  )
+              ]
+          }
+
+          //
+          if (stage == "prepare") {
+              drawTooltip(form, Pt, Line, center);
+          }
+          //
+          for (let i = 0; i < vectors.length; i++) {
+              vectors[i].draw();
+          }
+          //
+          validateAdv(vectors, form, Pt, center);
+        },
+
+        action: (type, px, py) => {
+            const mouse = new Pt(px, py);
+            if (type === "move") {
+                if (drag == null) {
+                    for (let i = 0; i < vectors.length; i++) {
+                        if (vectors[i].points[0].$subtract(mouse).magnitudeSq() < 1500) {
+                            canvas.style.cursor = "pointer";
+                            break;
+                        }
+                        canvas.style.cursor = "default";
+                    }
+                } else {
+                    drag.to(mouse);
+                }
+            } else if (type == "click") {
+                if (stage == "prepare") {
+                    stage = "started";
+                };
+                if (drag == null) {
+                    for (let i = 0; i < vectors.length; i++) {
+                        if (vectors[i].points[0].$subtract(mouse).magnitudeSq() < 1500) {
+                            canvas.style.cursor = "pointer";
+                            drag = vectors[i]
+                            break;
+                        }
+                    }
+                } else {
+                    drag = null;
+                    canvas.style.cursor = "default";
+                }
+            }
+        },
+      });
+
+      // Start the canvas
+      space.bindMouse().bindTouch().play();
+    })();
+  </script>
+</body>
+</html>

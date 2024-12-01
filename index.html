@@ -26,7 +26,8 @@
       top: 1em;
       left: 1em;
       z-index: 2;
-      width: 20em;
+      max-width: 20em;
+      padding-right: 2em;
       clear: none;
       text-align: left;
       font-size: 200%;
@@ -34,6 +35,7 @@
     input {
       margin: 0.2em;
       font-size: 100%;
+      width: 5em;
     }
     button {
       font-size: 100%;
@@ -101,12 +103,12 @@
 
     function drawTooltip(form, Pt, Line, center) {
         let points = [
-            new Pt(center.x + advStep * 8, center.y - advStep * 4),
-            new Pt(center.x + advStep * 3, 200)
+            new Pt(100, center.y + 300),
+            new Pt(100, center.y + 150)
         ];
-        let line = form.strokeOnly('gray', 1).line(points);
-        let marker = Line.marker(points, new Pt(10, 10), "arrow", true);
-        form.stroke('gray', 1).fill('gray').polygon(marker);
+        // let line = form.strokeOnly('gray', 1).line(points);
+        // let marker = Line.marker(points, new Pt(10, 10), "arrow", true);
+        // form.stroke('gray', 1).fill('gray').polygon(marker);
         form.fillOnly('gray').font(40).text([points[0].x, points[0].y + 20],
             "Bygg en kedja av pilar,"
         );
@@ -215,13 +217,13 @@
               vectors = [
                   newVector(
                       form, Pt, Line, "blue",
-                      new Pt(center.x + advStep * 2, 100),
+                      new Pt(center.x - advStep * 5, center.y + 100),
                       new Pt(op1 * advStep, 0),
                       op1
                   ),
                   newVector(
                       form, Pt, Line, "red",
-                      new Pt(center.x + advStep * 2, 150),
+                      new Pt(center.x - advStep * 5, center.y + 150),
                       new Pt(op2 * advStep, 0),
                       op2
                   )

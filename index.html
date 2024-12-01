@@ -44,7 +44,7 @@
 <body>
   <!-- Canvas container -->
   <div id="arguments">
-      <p>Ange termerna. Summan måste vara mellan 20 och -20:</p>
+      <p>Ange termerna. Summan och både termerna måste vara mellan 20 och -20:</p>
       <form>
           <input type="text" id="A" name="A" /><br/>
           <input type="text" id="B" name="B" /><br/>
@@ -62,7 +62,7 @@
         try {
             op1 = parseInt(document.getElementById("A").value);
             op2 = parseInt(document.getElementById("B").value);
-            return Math.abs(op1 + op2) <= 20;
+            return Math.abs(op1) <= 20 && Math.abs(op2) <= 20 && Math.abs(op1 + op2) <= 20;
         } catch (error) {
             return false;
         }
@@ -241,8 +241,9 @@
         },
 
         action: (type, px, py) => {
+            console.log(type);
             const mouse = new Pt(px, py);
-            if (type === "move") {
+            if (type == "move" || type == "drag") {
                 if (drag == null) {
                     for (let i = 0; i < vectors.length; i++) {
                         if (vectors[i].points[0].$subtract(mouse).magnitudeSq() < 1500) {
@@ -254,7 +255,7 @@
                 } else {
                     drag.to(mouse);
                 }
-            } else if (type == "click") {
+            } else if (type == "pointerdown") {
                 if (stage == "prepare") {
                     stage = "started";
                 };

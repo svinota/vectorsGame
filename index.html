@@ -220,12 +220,24 @@
       let vectors = [];
       let drag = null;
 
-      advInit(getRandom(-10, 10), getRandom(-10, 10));
+      let A = 100;
+      let B = 100;
+      while (
+          A > 20 ||
+          A < - 20 ||
+          B > 20 ||
+          B < - 20 ||
+          Math.abs(A + B) > 10
+      ) {
+          A = getRandom(-10, 10);
+          B = getRandom(-10, 10);
+      }
+      advInit(A, B);
 
       space.add({
         // Draw function
         animate: (time, ftime) => {
-          advStep = document.documentElement.clientWidth / 40;
+          advStep = document.documentElement.clientWidth / 22;
           form.strokeOnly("lightgray", 2);
 
           // Define unit vectors with default positions

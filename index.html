@@ -119,29 +119,36 @@
     function getWaypoint(vectors, wayPoint) {
         for (let i = 0; i < vectors.length; i++) {
             if (vectors[i].points[0].$subtract(wayPoint).magnitudeSq() < 1000) {
-                return vectors[i];
+                return [i, vectors[i]];
             }
         }
-        return null;
+        return [0, null];
     }
 
     function validateAdv(vectors, form, Pt, center) {
         let pointer = null;
+        let index = 0;
         let wayPoint = new Pt(center);
         let sum = 0;
         let args = [];
         let chain = [];
-        if (vectors.length < 1) {
+        let job = Array.from(vectors);
+        job.sort((a, b) => a.offset - b.offset);
+        if (job.length < 1) {
             return
         }
-        for (let i = 0; i < vectors.length; i++) {
-            pointer = getWaypoint(vectors, wayPoint);
+        while (true) {
+            [index, pointer] = getWaypoint(job, wayPoint);
             if (pointer == null) {
                 return
             }
+            job = job.filter(v => v !== pointer);
             wayPoint = pointer.points[1];
             args.push(pointer.value);
             chain.push(pointer);
+            if (job.length == 0) {
+                break
+            }
         }
         // draw circles
         form.strokeOnly('gray', 1).circle([center, new Pt(20, 20)]);
@@ -218,7 +225,7 @@
       space.add({
         // Draw function
         animate: (time, ftime) => {
-          advStep = document.documentElement.clientWidth / 20;
+          advStep = document.documentElement.clientWidth / 40;
           form.strokeOnly("lightgray", 2);
 
           // Define unit vectors with default positions

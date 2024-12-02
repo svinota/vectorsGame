@@ -159,7 +159,7 @@
             sum += chain[i].value;
             form.fillOnly(chain[i].color).font(20 + i * 10).text([chain[i].points[1].x, chain[i].points[1].y + advStep], sum);
         }
-        form.fillOnly("black").font(60).text([advStep * 2, center.y + advStep * 5], "Σ(" + args.join(",") + ") = " + sum);
+        form.fillOnly("black").font(60).text([advStep * 2, 100], "Σ(" + args.join(",") + ") = " + sum);
     }
 
     function newVector(form, Pt, Line, color, a, b, value) {

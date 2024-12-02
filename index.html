@@ -133,7 +133,7 @@
         let args = [];
         let chain = [];
         let job = Array.from(vectors);
-        job.sort((a, b) => a.offset - b.offset);
+        job.sort((a, b) => a.length() - b.length());
         if (job.length < 1) {
             return
         }
@@ -173,6 +173,9 @@
                 ],
             color: color,
             form: form,
+            length: function() {
+                return this.points[1].$subtract(this.points[0]).magnitude()
+            },
             draw: function() {
                 this.points[1].x = this.points[0].x + this.offset.x
                 this.points[1].y = this.points[0].y + this.offset.y

@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Vectors with Pts.js</title>
   <script src="https://unpkg.com/pts/dist/pts.js"></script> <!-- Include Pts.js -->
   <style>
     body {
@@ -22,6 +21,7 @@
       height: 90vh;
     }
     #arguments {
+      display: none;
       position: absolute;
       top: 1em;
       left: 1em;
@@ -46,7 +46,6 @@
 <body>
   <!-- Canvas container -->
   <div id="arguments">
-      <p>Ange termerna. Summan och både termerna måste vara mellan 20 och -20:</p>
       <form>
           <input type="text" id="A" name="A" /><br/>
           <input type="text" id="B" name="B" /><br/>
@@ -58,7 +57,7 @@
   <script>
     let resetAdv = false;
     let stage = "wait for input";
-    const advStep = 50;
+    let advStep = 20;
 
     function checkSanity() {
         try {
@@ -87,14 +86,14 @@
           // form.line([new Pt(center.x, center.y - advStep), new Pt(center.x, center.y + advStep)]);
           form.strokeOnly('gray', 1).line([new Pt(space.center.x, 0), new Pt(space.center.x, space.height)]);
 
-          form.fillOnly("red").text(new Pt(center.x + 10, center.y + 20), 0);
+          form.fillOnly("red").font(20).text(new Pt(center.x + 10, center.y + 20), 0);
           // Draw units
           for (let i = 0; i < 10; i++) {
               form.strokeOnly('gray', 1).line([new Pt(center.x + i * advStep, center.y - 10), new Pt(center.x + i * advStep, center.y + 10)]);
               form.strokeOnly('gray', 1).line([new Pt(center.x - i * advStep, center.y - 10), new Pt(center.x - i * advStep, center.y + 10)])
               if ( i != 0 ) {
-                  form.fillOnly("red").text(new Pt(center.x + i * advStep, center.y - 20), i);
-                  form.fillOnly("red").text(new Pt(center.x - i * advStep, center.y + 20), -i);
+                  form.fillOnly("red").font(20).text(new Pt(center.x + i * advStep, center.y - 20), i);
+                  form.fillOnly("red").font(20).text(new Pt(center.x - i * advStep, center.y + 20), -i);
               }
               form.strokeOnly('gray', 1).line([new Pt(center.x + 10, center.y + i * advStep), new Pt(center.x - 10, center.y + i * advStep)])
               form.strokeOnly('gray', 1).line([new Pt(center.x + 10, center.y - i * advStep), new Pt(center.x - 10, center.y - i * advStep)])
@@ -157,7 +156,7 @@
     }
 
     function newVector(form, Pt, Line, color, a, b, value) {
-        let vector = {
+        return {
             offset: new Pt(b.x, b.y),
             value: value,
             points:
@@ -179,14 +178,28 @@
                 let marker = Line.marker(this.points, new Pt(10, 10), "arrow", true);
                 this.form.stroke(this.color, 3).fill(this.color).polygon(marker);
                 form.stroke(this.color, 3).fill(this.color).circle([this.points[0], new Pt(5, 5)]);
+                halvX = this.points[0].x + this.offset.x / 2;
+                halvY = this.points[0].y + this.offset.y / 2;
+                form.fillOnly(this.color).font(40).text([halvX, halvY - 20], this.value);
             },
             to: function(p) {
                 this.points[0].to(p);
                 this.draw();
             },
         }
-        return vector;
     }
+
+    function getRandom(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function advInit(A, B) {
+        document.getElementById("A").value = A;
+        document.getElementById("B").value = B;
+        resetAdv = true;
+        stage = "prepare";
+    }
+
 
     (function() {
       // Import Pts into the namespace
@@ -200,9 +213,12 @@
       let vectors = [];
       let drag = null;
 
+      advInit(getRandom(-10, 10), getRandom(-10, 10));
+
       space.add({
         // Draw function
         animate: (time, ftime) => {
+          advStep = document.documentElement.clientWidth / 20;
           form.strokeOnly("lightgray", 2);
 
           // Define unit vectors with default positions
@@ -257,6 +273,9 @@
                 } else {
                     drag.to(mouse);
                 }
+            } else if (type == "pointerup") {
+                drag = null;
+                canvas.style.cursor = "default";
             } else if (type == "pointerdown") {
                 if (stage == "prepare") {
                     stage = "started";
